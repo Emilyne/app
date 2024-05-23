@@ -1,0 +1,154 @@
+/***********************************************
+     LISTES SELECT
+************************************************/
+      
+document.addEventListener('DOMContentLoaded', function() {
+      let listeMeteo = [
+        { "idMeteo": "1", "meteo": "Brouillard" },
+        { "idMeteo": "2", "meteo": "Neige" },
+        { "idMeteo": "3", "meteo": "Orage" },
+        { "idMeteo": "4", "meteo": "Pluie" },
+        { "idMeteo": "5", "meteo": "Soleil" }
+    ];
+
+    let listeCirculation = [
+        { "idCirculation": "1", "circulation": "Embouteillages" },
+        { "idCirculation": "2", "circulation": "Dense" },
+        { "idCirculation": "3", "circulation": "Fluide" }
+    ];
+
+     function populateSelect(selectId, options) {
+        const selectList = document.getElementById(selectId);
+        options.forEach(option => {
+            const optionElement = document.createElement('option');
+            optionElement.value = option.idMeteo || option.idCirculation; 
+            optionElement.textContent = option.meteo || option.circulation;
+            selectList.appendChild(optionElement);
+        });
+    }
+
+     populateSelect('meteo', listeMeteo); 
+    populateSelect('circulation', listeCirculation);
+});
+
+
+
+/***********************************************
+     NOUVELLE EXPERIENCE
+************************************************/
+
+// Afficher le nombre de km parcourus après l'envoi du formulaire
+function afficherKM(nbKm) {
+    const affichageKM = document.getElementById('affichageKM');
+    affichageKM.innerHTML = `Tu as conduit ${nbKm} km !`;
+    affichageKM.classList.add('show');
+
+    setTimeout(() => {
+        affichageKM.classList.remove('show');
+    }, 2000);
+}
+
+// Enregister une nouvelle expérience
+function enregistrerExperience(e) {
+    e.preventDefault(); 
+
+    // Lire les données des champs input et select
+    const date = document.getElementById('date').value;
+    const heureDepart = document.getElementById('heureDepart').value;
+    const heureArrivee = document.getElementById('heureArrivee').value;
+    const nbKm = Number(document.getElementById('nbKm').value);
+    const meteo = document.getElementById('meteo').value;
+    const circulation = document.getElementById('circulation').value;
+    const kmVille = Number(document.getElementById('kmVille').value); 
+    const kmAutoroute = Number(document.getElementById('kmAutoroute').value);
+    const kmCampagne = Number(document.getElementById('kmCampagne').value);
+    const kmVoieRapide = Number(document.getElementById('kmVoieRapide').value);
+    const epiDroite = Number(document.getElementById('epi_droite').value);
+    const epiGauche = Number(document.getElementById('epi_gauche').value);
+    const batailleDroite = Number(document.getElementById('bataille_droite').value);
+    const batailleGauche = Number(document.getElementById('bataille_gauche').value);
+    const creneauDroit = Number(document.getElementById('creneau_droit').value);
+    const creneauGauche = Number(document.getElementById('creneau_gauche').value);
+    const marcheArriere = Number(document.getElementById('marche_arriere').value);
+    const marcheArriereCourte = Number(document.getElementById('marche_arriere_courte').value);
+    const demiTour = Number(document.getElementById('demi_tour').value);
+    const rondPoint = Number(document.getElementById('rond_point').value);
+
+    // Validation du nb de km saisis par rapport au résumé par type de route
+    const totalKm = kmVille + kmAutoroute + kmCampagne + kmVoieRapide;
+    if (nbKm !== totalKm) {
+        alert('Oh, oh, il y a comme une erreur... Le nombre total de km doit être exactement égal au nombre de km par type de route.');
+        return;
+    }
+
+    // Créer un objet pour enregister la nouvelle expérience
+    let nouvelleExperience = {
+        date: date,
+        heureDepart: heureDepart,
+        heureArrivee: heureArrivee,
+        nbKm: nbKm,
+        meteo: meteo,
+        circulation: circulation,
+        typesDeRoutes: {
+            ville: kmVille,
+            autoroute: kmAutoroute,
+            campagne: kmCampagne,
+            voieRapide: kmVoieRapide
+        },
+        manoeuvres: {
+            epiDroite: epiDroite,
+            epiGauche: epiGauche,
+            batailleDroite: batailleDroite,
+            batailleGauche: batailleGauche,
+            creneauDroit: creneauDroit,
+            creneauGauche: creneauGauche,
+            marcheArriere: marcheArriere,
+            marcheArriereCourte: marcheArriereCourte,
+            demiTour: demiTour ,
+            rondPoint: rondPoint
+        }
+    };
+
+    // Récupérer les expériences de conduite enregistrées en localStorage
+    let toutesExperiences = JSON.parse(localStorage.getItem('expConduite')) || { experiences: [] };
+
+    // Incrémenter +1 par rapport à l'id de la dernière expérience
+    let nouvelleId = toutesExperiences.experiences.length > 0 ? toutesExperiences.experiences[toutesExperiences.experiences.length - 1].id + 1 : 1;
+    nouvelleExperience.id = nouvelleId;
+
+    toutesExperiences.experiences.push(nouvelleExperience);
+
+    // Ajouter la nouvelle expérience à celles déjà enregistrées en localStorage
+    localStorage.setItem('expConduite', JSON.stringify(toutesExperiences));
+
+    // Mettre à jour l'affichage du nombre de km dans la div affichageKM
+    afficherKM(nbKm);
+
+   // Réinitialiser le formulaire
+   document.getElementById('enregistrer-trajet-form').reset();
+
+   // Attendre 5 secondes avant de retourner sur le dashboard
+   setTimeout(() => {
+       window.location.href = 'expConduiteHomepage.html'; 
+   }, 5000);
+}
+
+// Attendre le chargement du DOM avant de lancer l'eventListener sur le bouton
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('enregistrer-trajet-form');
+    form.addEventListener('submit', enregistrerExperience);
+})
+
+/***********************************************
+     MISE A JOUR DU DASHBOARD
+************************************************/
+
+/* 
+1. Récupérer toutes les expériences
+2. Calculer le nb total d'expériences avec length
+3. Calculer le nombre d'heures pour l'ensemble des expériences
+4. Calculer le nombre total de km conduits
+5. Calculer le pourcentage en fonction du type de route
+6. Calculer le nombre de km restants à conduire (le but est 3000)
+7. Afficher les résultats dans le dashboard
+*/
